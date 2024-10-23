@@ -1401,7 +1401,8 @@ balance = function(gg,
     if (use.gurobi) {
 
         if (verbose) { message("Starting optimization with gurobi!") }
-        
+
+        start.time = Sys.time();
         sol = run_gurobi(cvec = cvec,
                          Amat = Amat,
                          bvec = bvec,
@@ -1412,10 +1413,13 @@ balance = function(gg,
                          vtype = vars$vtype,
                          objsense = "min",
                          control = control)
+      	sol$elapsed.time = as.numeric(Sys.time() - start.time, units = "secs")
+      
     } else {
 
         if (verbose) { message("Starting optimization with CPLEX!") }
-        
+
+      	start.time = Sys.time();
         sol =  gGnome:::Rcplex2(cvec,
                                 Amat,
                                 bvec,
@@ -1427,8 +1431,11 @@ balance = function(gg,
                                 objsense = "min",
                                 control = control,
                                 tuning = FALSE)
+      	sol$elapsed.time = as.numeric(Sys.time() - start.time, units = "secs")
     }
-    
+
+    #browser()
+
     vars$cvec = cvec
     vars$x = sol$x
 
@@ -1481,12 +1488,13 @@ balance = function(gg,
     gg$set(obj = sol$obj)
     gg$set(status = sol$status)
     gg$set(epgap = sol$epgap)
+    gg$set(elapsed.time = sol$elapsed.time)
     if (!use.gurobi) {
         gg$set(code = readRDS(system.file('extdata', 'cplex_codes.rds', package="gGnome"))[.(sol$status), code])
     }
 
     if (verbose) {
-      message("CPLEX epgap ", sol$epgap, " with solution status ", gg$meta$code)
+      message("CPLEX epgap ", sol$epgap, " with solution status ", gg$meta$code,  " in ", sol$elapsed.time, " seconds.")
     }
     
     ##  fix loose ends
